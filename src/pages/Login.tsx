@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import BuntingLogo from '@/components/BuntingLogo';
 import DevBanner from '@/components/DevBanner';
 import AuthCard from '@/components/AuthCard';
 import MicrosoftLoginButton from '@/components/MicrosoftLoginButton';
 import BadgeLoginButton from '@/components/BadgeLoginButton';
 import { isDevelopment, getReturnUrl } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -49,7 +48,8 @@ const Login: React.FC = () => {
   };
 
   const handleBadgeLogin = () => {
-    navigate(`/badge-login?return_url=${encodeURIComponent(returnUrl)}`);
+    // Redirect to the badge login app
+    window.location.href = `https://badge.buntinggpt.com?return_url=${encodeURIComponent(returnUrl)}`;
   };
 
   return (
@@ -101,23 +101,6 @@ const Login: React.FC = () => {
               <p className="text-center text-xs text-muted-foreground">
                 For employees without company email access
               </p>
-            </div>
-
-            {/* Additional Links */}
-            <div className="mt-8 space-y-4 text-center text-sm">
-              <div>
-                <span className="text-muted-foreground">Already have an email account? </span>
-                <a href="#" className="text-primary hover:underline">Sign in with email</a>
-              </div>
-              
-              <div>
-                <a href="#" className="text-primary hover:underline">Forgot your password?</a>
-              </div>
-              
-              <div className="pt-2 border-t border-border">
-                <span className="text-muted-foreground">Don't have an account? </span>
-                <a href="#" className="text-primary hover:underline">Sign up</a>
-              </div>
             </div>
           </AuthCard>
         </div>

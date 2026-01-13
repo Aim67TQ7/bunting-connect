@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import AuthCard from '@/components/AuthCard';
-import { cookieStorage, isDevelopment } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 const Logout: React.FC = () => {
   const navigate = useNavigate();
@@ -12,30 +12,8 @@ const Logout: React.FC = () => {
   useEffect(() => {
     const performLogout = async () => {
       try {
-        // TODO: Sign out from Supabase
-        // await supabase.auth.signOut();
-
-        // Clear all session cookies
-        const cookiesToClear = [
-          'sb-auth-token',
-          'sb-auth-token.0',
-          'sb-auth-token.1',
-          'sb-auth-token.2',
-          'sb-access-token',
-          'sb-refresh-token',
-        ];
-
-        if (isDevelopment()) {
-          // Clear localStorage in development
-          cookiesToClear.forEach(key => {
-            localStorage.removeItem(key);
-          });
-        } else {
-          // Clear cookies in production
-          cookiesToClear.forEach(key => {
-            cookieStorage.removeItem(key);
-          });
-        }
+        // Sign out from Supabase - this also clears the session cookies
+        await supabase.auth.signOut();
 
         setStatus('complete');
 
