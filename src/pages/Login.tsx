@@ -31,9 +31,9 @@ const Login: React.FC = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         console.log('[Login] Session check:', session ? 'FOUND' : 'NONE');
-        console.log('[Login] returnUrl from getReturnUrl():', returnUrl);
         
         if (session) {
+          const returnUrl = getReturnUrl(); // Get it here, not from state
           console.log('[Login] Already authenticated, redirecting to:', returnUrl);
           window.location.href = returnUrl;
           return;
@@ -45,7 +45,7 @@ const Login: React.FC = () => {
     };
     
     redirectIfAuthenticated();
-  }, [returnUrl]);
+  }, []); // Empty dependency array - runs once on mount
 
   // Show loading spinner while checking session
   if (isCheckingSession) {
