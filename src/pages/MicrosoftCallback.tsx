@@ -18,7 +18,7 @@ const clearReturnUrlStorage = () => {
   const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
   document.cookie = `auth_return_url=; path=/${domain}; max-age=0`;
 };
-import { getReturnUrl } from '@/lib/auth';
+
 
 const MicrosoftCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -56,11 +56,22 @@ const MicrosoftCallback: React.FC = () => {
         if (event === 'SIGNED_IN' && session) {
           setStatus('Login successful! Redirecting...');
           
+          // Debug logging
+          const sessionStorageUrl = sessionStorage.getItem('auth_return_url');
+          const cookieUrl = getCookieReturnUrl();
+          
+          console.log('=== CALLBACK DEBUG ===');
+          console.log('sessionStorage returnUrl:', sessionStorageUrl);
+          console.log('cookie returnUrl:', cookieUrl);
+          console.log('document.cookie:', document.cookie);
+          
           // Try sessionStorage first, then cookie, then safe fallback
           const returnUrl = 
-            sessionStorage.getItem('auth_return_url') || 
-            getCookieReturnUrl() || 
+            sessionStorageUrl || 
+            cookieUrl || 
             'https://buntinggpt.com';  // Safe default, NOT window.location.origin
+          
+          console.log('Final redirect URL:', returnUrl);
           
           clearReturnUrlStorage();
           
