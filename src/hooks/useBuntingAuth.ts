@@ -2,34 +2,15 @@
  * Bunting Auth Hook - Reusable authentication for *.buntinggpt.com apps
  * 
  * USAGE:
- * 1. Copy this file AND src/lib/supabase.ts to your app
- * 2. Install js-cookie: npm install js-cookie @types/js-cookie
- * 3. Copy the isDevelopment() function from src/lib/auth.ts
- * 4. Use the hook in your app's root or protected routes
+ * 1. Copy src/lib/supabase.ts and this file to your app
+ * 2. Use the hook in your app's root or protected routes
  * 
  * REQUIRED FILES TO COPY:
  * - src/lib/supabase.ts (cookie-based Supabase client)
  * - src/hooks/useBuntingAuth.ts (this file)
  * 
- * The Supabase client MUST use cookie storage scoped to .buntinggpt.com:
- * ```typescript
- * import Cookies from 'js-cookie';
- * 
- * const cookieStorage = {
- *   getItem: (key) => Cookies.get(key) || null,
- *   setItem: (key, value) => Cookies.set(key, value, {
- *     domain: '.buntinggpt.com',
- *     secure: true,
- *     sameSite: 'lax',
- *     expires: 7,
- *   }),
- *   removeItem: (key) => Cookies.remove(key, { domain: '.buntinggpt.com' }),
- * };
- * 
- * export const supabase = createClient(URL, KEY, {
- *   auth: { storage: cookieStorage, persistSession: true, autoRefreshToken: true }
- * });
- * ```
+ * The Supabase client uses native cookie storage scoped to .buntinggpt.com.
+ * See src/lib/supabase.ts for the full implementation.
  */
 
 import { useEffect, useState, useCallback } from 'react';
