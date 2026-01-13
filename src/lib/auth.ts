@@ -28,16 +28,15 @@ export const isValidReturnUrl = (url: string): boolean => {
 // Get return URL from query params with validation
 export const getReturnUrl = (): string => {
   const params = new URLSearchParams(window.location.search);
-  const returnUrl = params.get('return_url');
+  // Support both param names - self.buntinggpt.com uses 'returnUrl'
+  const returnUrl = params.get('return_url') || params.get('returnUrl');
   
   if (returnUrl && isValidReturnUrl(returnUrl)) {
     return returnUrl;
   }
   
-  // Default redirect:
-  // - In dev/preview stay within the app
-  // - In prod, default to this auth hub origin (login.buntinggpt.com)
-  return isDevelopment() ? '/' : window.location.origin;
+  // Default to main app, NOT login.buntinggpt.com
+  return isDevelopment() ? '/' : 'https://buntinggpt.com';
 };
 
 // Cookie chunking constants (must match src/lib/supabase.ts)

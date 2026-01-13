@@ -9,6 +9,13 @@ import { isDevelopment, getReturnUrl } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
+// Store return URL in a domain-scoped cookie for reliable persistence across OAuth
+const storeReturnUrlCookie = (url: string) => {
+  const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
+  const secure = isDevelopment() ? '' : '; Secure';
+  document.cookie = `auth_return_url=${encodeURIComponent(url)}; path=/${domain}; max-age=300; SameSite=Lax${secure}`;
+};
+
 const Login: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -19,8 +26,9 @@ const Login: React.FC = () => {
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
     try {
-      // Store return URL for after OAuth callback
+      // Store in BOTH sessionStorage (fast) and cookie (reliable fallback)
       sessionStorage.setItem('auth_return_url', returnUrl);
+      storeReturnUrlCookie(returnUrl);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',

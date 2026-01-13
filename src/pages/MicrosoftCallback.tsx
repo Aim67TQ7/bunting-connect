@@ -4,6 +4,20 @@ import { Loader2 } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import AuthCard from '@/components/AuthCard';
 import { supabase } from '@/lib/supabase';
+import { isDevelopment } from '@/lib/auth';
+
+// Read return URL from cookie
+const getCookieReturnUrl = (): string | null => {
+  const match = document.cookie.match(/auth_return_url=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+// Clear return URL from both storage locations
+const clearReturnUrlStorage = () => {
+  sessionStorage.removeItem('auth_return_url');
+  const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
+  document.cookie = `auth_return_url=; path=/${domain}; max-age=0`;
+};
 import { getReturnUrl } from '@/lib/auth';
 
 const MicrosoftCallback: React.FC = () => {
@@ -42,10 +56,13 @@ const MicrosoftCallback: React.FC = () => {
         if (event === 'SIGNED_IN' && session) {
           setStatus('Login successful! Redirecting...');
           
-          // Get return URL from sessionStorage or fallback
-          const storedReturnUrl = sessionStorage.getItem('auth_return_url');
-          sessionStorage.removeItem('auth_return_url');
-          const returnUrl = storedReturnUrl || getReturnUrl();
+          // Try sessionStorage first, then cookie, then safe fallback
+          const returnUrl = 
+            sessionStorage.getItem('auth_return_url') || 
+            getCookieReturnUrl() || 
+            'https://buntinggpt.com';  // Safe default, NOT window.location.origin
+          
+          clearReturnUrlStorage();
           
           // Small delay for UX, then redirect
           setTimeout(() => {
