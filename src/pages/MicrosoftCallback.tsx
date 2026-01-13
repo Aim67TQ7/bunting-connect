@@ -89,7 +89,20 @@ const MicrosoftCallback: React.FC = () => {
 
     setStatus('Verifying your credentials...');
 
-    // Listen for auth state change
+    // Immediate session check - handles race condition where Supabase already processed tokens
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setStatus('Login successful! Redirecting...');
+        setTimeout(redirectToDestination, 500);
+        return true;
+      }
+      return false;
+    };
+
+    checkExistingSession();
+
+    // Listen for auth state change (backup if immediate check misses it)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setStatus('Login successful! Redirecting...');
