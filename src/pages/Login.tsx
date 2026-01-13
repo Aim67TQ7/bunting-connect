@@ -42,10 +42,12 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       // Store returnUrl in cookie ONLY (survives OAuth redirect)
-      const returnUrl = getReturnUrl();
-      const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
-      const secure = isDevelopment() ? '' : '; Secure';
-      document.cookie = `auth_return_url=${encodeURIComponent(returnUrl)}; path=/; max-age=300; SameSite=Lax${domain}${secure}`;
+      const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'https://buntinggpt.com';
+      const cookieString = `auth_return_url=${encodeURIComponent(returnUrl)}; path=/; domain=.buntinggpt.com; max-age=300; SameSite=Lax; Secure`;
+      document.cookie = cookieString;
+      console.log('[Login] Set auth_return_url cookie:', returnUrl);
+      console.log('[Login] Cookie string:', cookieString);
+      console.log('[Login] document.cookie after:', document.cookie);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
