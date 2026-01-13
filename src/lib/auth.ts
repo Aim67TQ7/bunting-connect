@@ -34,8 +34,10 @@ export const getReturnUrl = (): string => {
     return returnUrl;
   }
   
-  // Default redirect
-  return isDevelopment() ? '/' : 'https://buntinggpt.com';
+  // Default redirect:
+  // - In dev/preview stay within the app
+  // - In prod, default to this auth hub origin (login.buntinggpt.com)
+  return isDevelopment() ? '/' : window.location.origin;
 };
 
 // Cookie storage for cross-subdomain sessions
