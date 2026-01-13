@@ -28,6 +28,9 @@ const Login: React.FC = () => {
         options: {
           scopes: 'email profile openid',
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       });
       
