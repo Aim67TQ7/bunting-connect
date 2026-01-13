@@ -22,7 +22,10 @@ const Login: React.FC = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        window.location.href = getReturnUrl();
+        const params = new URLSearchParams(window.location.search);
+        const returnUrl = params.get('returnUrl') || 'https://buntinggpt.com';
+        console.log('[Login] Already authenticated, redirecting to:', returnUrl);
+        window.location.href = returnUrl;
         return;
       }
       setIsCheckingSession(false);
