@@ -2,8 +2,12 @@
 
 // Check if running in development mode
 export const isDevelopment = (): boolean => {
-  return window.location.hostname === 'localhost' || 
-         window.location.hostname === '127.0.0.1';
+  const host = window.location.hostname;
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.lovableproject.com')
+  );
 };
 
 // Validate return URL is within buntinggpt.com domain
