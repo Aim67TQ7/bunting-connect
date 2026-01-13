@@ -59,9 +59,13 @@ const Login: React.FC = () => {
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
     try {
+      // Read returnUrl fresh from URL params (not from state which may be stale)
+      const params = new URLSearchParams(window.location.search);
+      const freshReturnUrl = params.get('returnUrl') || params.get('return_url') || 'https://buntinggpt.com';
+      
       // Store in BOTH sessionStorage (fast) and cookie (reliable fallback)
-      sessionStorage.setItem('auth_return_url', returnUrl);
-      storeReturnUrlCookie(returnUrl);
+      sessionStorage.setItem('auth_return_url', freshReturnUrl);
+      storeReturnUrlCookie(freshReturnUrl);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
