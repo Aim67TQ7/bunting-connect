@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import AuthCard from '@/components/AuthCard';
+import { supabase } from '@/integrations/supabase/client';
 import { getReturnUrl } from '@/lib/auth';
 
 const MicrosoftCallback: React.FC = () => {
@@ -24,20 +25,30 @@ const MicrosoftCallback: React.FC = () => {
 
         setStatus('Verifying your credentials...');
 
-        // TODO: Handle Supabase OAuth callback
-        // When Supabase is connected, this will automatically:
-        // 1. Exchange the OAuth code for tokens
-        // 2. Create/update the user in Supabase Auth
-        // 3. Create a session
+        // Get session from Supabase - this handles the OAuth callback automatically
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        // if (sessionError) throw sessionError;
-        // if (!session) throw new Error('No session created');
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw sessionError;
+        }
+        
+        if (!session) {
+          // Wait a moment and try again - OAuth callback may still be processing
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
+          
+          if (retryError || !retrySession) {
+            throw new Error('No session created. Please try logging in again.');
+          }
+        }
 
         setStatus('Login successful! Redirecting...');
         
-        // Get return URL and redirect
-        const returnUrl = getReturnUrl();
+        // Get return URL from sessionStorage or fallback
+        const storedReturnUrl = sessionStorage.getItem('auth_return_url');
+        sessionStorage.removeItem('auth_return_url');
+        const returnUrl = storedReturnUrl || getReturnUrl();
         
         // Small delay for UX
         setTimeout(() => {

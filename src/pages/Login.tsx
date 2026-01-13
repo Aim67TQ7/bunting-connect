@@ -6,6 +6,7 @@ import AuthCard from '@/components/AuthCard';
 import MicrosoftLoginButton from '@/components/MicrosoftLoginButton';
 import BadgeLoginButton from '@/components/BadgeLoginButton';
 import { isDevelopment, getReturnUrl } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const Login: React.FC = () => {
@@ -19,10 +20,23 @@ const Login: React.FC = () => {
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement Microsoft OAuth with Supabase
-      toast.info('Microsoft OAuth requires Supabase configuration', {
-        description: 'Connect Supabase and configure Azure AD OAuth provider',
+      // Store return URL for after OAuth callback
+      sessionStorage.setItem('auth_return_url', returnUrl);
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          scopes: 'email profile openid',
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
+      
+      if (error) {
+        console.error('Microsoft OAuth error:', error);
+        toast.error('Unable to sign in with Microsoft', {
+          description: error.message,
+        });
+      }
     } catch (error) {
       console.error('Microsoft login error:', error);
       toast.error('Unable to connect. Please try again.');
