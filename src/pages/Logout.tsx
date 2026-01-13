@@ -11,22 +11,20 @@ const Logout: React.FC = () => {
 
   useEffect(() => {
     const performLogout = async () => {
-      try {
-        // Sign out from Supabase - this also clears the session cookies
-        await supabase.auth.signOut();
-
-        setStatus('complete');
-
-        // Redirect to login after a short delay
-        setTimeout(() => {
-          navigate('/?message=' + encodeURIComponent('You have been logged out'));
-        }, 1500);
-
-      } catch (error) {
-        console.error('Logout error:', error);
-        // Still redirect even on error
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Nuclear clear: All cookies on both current path and .buntinggpt.com domain
+      document.cookie.split(';').forEach(c => {
+        const name = c.trim().split('=')[0];
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.buntinggpt.com`;
+      });
+      
+      setStatus('complete');
+      setTimeout(() => {
         navigate('/?message=' + encodeURIComponent('You have been logged out'));
-      }
+      }, 1500);
     };
 
     performLogout();

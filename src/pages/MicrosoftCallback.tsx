@@ -6,27 +6,13 @@ import AuthCard from '@/components/AuthCard';
 import { supabase } from '@/lib/supabase';
 import { isDevelopment } from '@/lib/auth';
 
-// Read return URL from cookie
-const getCookieReturnUrl = (): string | null => {
-  const match = document.cookie.match(/auth_return_url=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-};
-
-// Clear return URL from both storage locations
-const clearReturnUrlStorage = () => {
-  sessionStorage.removeItem('auth_return_url');
-  const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
-  document.cookie = `auth_return_url=; path=/${domain}; max-age=0`;
-};
-
-
 const MicrosoftCallback: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('Processing your login...');
 
-  // At the VERY TOP of the component, before anything else
+  // Debug mode check - runs before anything else
   const [debugStop] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('debug') === 'stop';
@@ -46,9 +32,9 @@ const MicrosoftCallback: React.FC = () => {
         }}>Check Cookies</button>
         <br/><br/>
         <button onClick={() => {
-          const params = new URLSearchParams(window.location.search);
-          alert(`returnUrl param: ${params.get('returnUrl')}`);
-        }}>Check returnUrl</button>
+          const match = document.cookie.match(/auth_return_url=([^;]+)/);
+          alert(`Return URL Cookie: ${match ? decodeURIComponent(match[1]) : 'NOT SET'}`);
+        }}>Check Return URL</button>
         <br/><br/>
         <button onClick={() => {
           window.location.href = 'https://self.buntinggpt.com?debug=stop';
@@ -56,90 +42,71 @@ const MicrosoftCallback: React.FC = () => {
         <br/><br/>
         <button onClick={() => {
           document.cookie.split(';').forEach(c => {
-            document.cookie = c.trim().split('=')[0] + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.buntinggpt.com';
+            const name = c.trim().split('=')[0];
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.buntinggpt.com`;
           });
-          localStorage.clear();
-          sessionStorage.clear();
-          alert('Cleared all cookies, localStorage, and sessionStorage');
+          alert('Cleared all cookies');
         }}>🔥 Nuclear Clear</button>
       </div>
     );
   }
 
+  // Helper: Get return URL from cookie only
+  const getReturnUrlFromCookie = (): string => {
+    const match = document.cookie.match(/auth_return_url=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : 'https://buntinggpt.com';
+  };
+
+  // Helper: Clear return URL cookie
+  const clearReturnUrlCookie = () => {
+    const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
+    document.cookie = `auth_return_url=; path=/; max-age=0${domain}`;
+  };
+
+  // Helper: Redirect to destination
+  const redirectToDestination = () => {
+    const returnUrl = getReturnUrlFromCookie();
+    clearReturnUrlCookie();
+    window.location.href = returnUrl;
+  };
+
   useEffect(() => {
-    // Check for error in query params first
+    // Check for error in query params
     const errorParam = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
-    
     if (errorParam) {
-      setError(errorDescription || 'Authentication failed');
+      setError(searchParams.get('error_description') || 'Authentication failed');
       return;
     }
 
-    // Check for error in hash fragment (Supabase returns errors here too)
+    // Check for error in hash fragment
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const hashError = hashParams.get('error');
-    const hashErrorDescription = hashParams.get('error_description');
-    
     if (hashError) {
-      setError(hashErrorDescription || hashError || 'Authentication failed');
+      setError(hashParams.get('error_description') || hashError);
       return;
     }
 
     setStatus('Verifying your credentials...');
 
-    // Helper function to get return URL and redirect
-    const redirectToReturnUrl = () => {
-      const cookieUrl = getCookieReturnUrl();
-      const sessionUrl = sessionStorage.getItem('auth_return_url');
-      
-      // Cookie first (most reliable across OAuth), then sessionStorage, then fallback
-      const returnUrl = cookieUrl || sessionUrl || 'https://buntinggpt.com';
-      
-      console.log('[Callback] Redirecting to:', returnUrl);
-      clearReturnUrlStorage();
-      window.location.href = returnUrl;
-    };
-
-    let subscription: { unsubscribe: () => void } | null = null;
-    let timeout: NodeJS.Timeout | null = null;
-
-    // IIFE to handle async session check
-    (async () => {
-      // CRITICAL: Check for existing session immediately
-      // This handles the race condition where Supabase already processed the hash
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log('[Callback] Found existing session immediately');
+    // Listen for auth state change
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
         setStatus('Login successful! Redirecting...');
-        setTimeout(() => redirectToReturnUrl(), 500);
-        return;
+        setTimeout(redirectToDestination, 500);
       }
+    });
 
-      // Set up auth state listener for when Supabase processes the hash
-      const authListener = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          console.log('[Callback] Auth event:', event);
-          
-          if (event === 'SIGNED_IN' && session) {
-            setStatus('Login successful! Redirecting...');
-            setTimeout(() => redirectToReturnUrl(), 500);
-          }
-        }
-      );
-      subscription = authListener.data.subscription;
-
-      // Fallback timeout - if no auth event after 10 seconds, show error
-      timeout = setTimeout(() => {
-        setError('Authentication timed out. Please try again.');
-      }, 10000);
-    })();
+    // Timeout after 10 seconds
+    const timeout = setTimeout(() => {
+      setError('Authentication timed out. Please try again.');
+    }, 10000);
 
     return () => {
-      subscription?.unsubscribe();
-      if (timeout) clearTimeout(timeout);
+      subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   if (error) {
     return (
