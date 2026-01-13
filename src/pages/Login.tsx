@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import DevBanner from '@/components/DevBanner';
 import AuthCard from '@/components/AuthCard';
@@ -19,9 +20,41 @@ const storeReturnUrlCookie = (url: string) => {
 const Login: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   
   const message = searchParams.get('message');
   const returnUrl = getReturnUrl();
+
+  // Check if already authenticated and redirect immediately
+  useEffect(() => {
+    const redirectIfAuthenticated = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[Login] Session check:', session ? 'FOUND' : 'NONE');
+        console.log('[Login] returnUrl from getReturnUrl():', returnUrl);
+        
+        if (session) {
+          console.log('[Login] Already authenticated, redirecting to:', returnUrl);
+          window.location.href = returnUrl;
+          return;
+        }
+      } catch (error) {
+        console.error('[Login] Session check error:', error);
+      }
+      setIsCheckingSession(false);
+    };
+    
+    redirectIfAuthenticated();
+  }, [returnUrl]);
+
+  // Show loading spinner while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
