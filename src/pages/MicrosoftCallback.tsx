@@ -48,49 +48,56 @@ const MicrosoftCallback: React.FC = () => {
 
     setStatus('Verifying your credentials...');
 
-    // Set up auth state listener - this fires when Supabase processes the hash
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('[Callback] Auth event:', event);
-        
-        if (event === 'SIGNED_IN' && session) {
-          setStatus('Login successful! Redirecting...');
-          
-          // Debug logging
-          const sessionStorageUrl = sessionStorage.getItem('auth_return_url');
-          const cookieUrl = getCookieReturnUrl();
-          
-          console.log('=== CALLBACK DEBUG ===');
-          console.log('sessionStorage returnUrl:', sessionStorageUrl);
-          console.log('cookie returnUrl:', cookieUrl);
-          console.log('document.cookie:', document.cookie);
-          
-          // Try sessionStorage first, then cookie, then safe fallback
-          const returnUrl = 
-            sessionStorageUrl || 
-            cookieUrl || 
-            'https://buntinggpt.com';  // Safe default, NOT window.location.origin
-          
-          console.log('Final redirect URL:', returnUrl);
-          
-          clearReturnUrlStorage();
-          
-          // Small delay for UX, then redirect
-          setTimeout(() => {
-            window.location.href = returnUrl;
-          }, 1000);
-        }
-      }
-    );
+    // Helper function to get return URL and redirect
+    const redirectToReturnUrl = () => {
+      const cookieUrl = getCookieReturnUrl();
+      const sessionUrl = sessionStorage.getItem('auth_return_url');
+      
+      // Cookie first (most reliable across OAuth), then sessionStorage, then fallback
+      const returnUrl = cookieUrl || sessionUrl || 'https://buntinggpt.com';
+      
+      console.log('[Callback] Redirecting to:', returnUrl);
+      clearReturnUrlStorage();
+      window.location.href = returnUrl;
+    };
 
-    // Fallback timeout - if no auth event after 10 seconds, show error
-    const timeout = setTimeout(() => {
-      setError('Authentication timed out. Please try again.');
-    }, 10000);
+    let subscription: { unsubscribe: () => void } | null = null;
+    let timeout: NodeJS.Timeout | null = null;
+
+    // IIFE to handle async session check
+    (async () => {
+      // CRITICAL: Check for existing session immediately
+      // This handles the race condition where Supabase already processed the hash
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log('[Callback] Found existing session immediately');
+        setStatus('Login successful! Redirecting...');
+        setTimeout(() => redirectToReturnUrl(), 500);
+        return;
+      }
+
+      // Set up auth state listener for when Supabase processes the hash
+      const authListener = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          console.log('[Callback] Auth event:', event);
+          
+          if (event === 'SIGNED_IN' && session) {
+            setStatus('Login successful! Redirecting...');
+            setTimeout(() => redirectToReturnUrl(), 500);
+          }
+        }
+      );
+      subscription = authListener.data.subscription;
+
+      // Fallback timeout - if no auth event after 10 seconds, show error
+      timeout = setTimeout(() => {
+        setError('Authentication timed out. Please try again.');
+      }, 10000);
+    })();
 
     return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
+      subscription?.unsubscribe();
+      if (timeout) clearTimeout(timeout);
     };
   }, [searchParams, navigate]);
 
