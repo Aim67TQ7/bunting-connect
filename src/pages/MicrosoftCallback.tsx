@@ -13,55 +13,57 @@ const MicrosoftCallback: React.FC = () => {
   const [status, setStatus] = useState('Processing your login...');
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const errorParam = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
+    // Check for error in query params first
+    const errorParam = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (errorParam) {
+      setError(errorDescription || 'Authentication failed');
+      return;
+    }
 
-        if (errorParam) {
-          setError(errorDescription || 'Authentication failed');
-          return;
-        }
+    // Check for error in hash fragment (Supabase returns errors here too)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashError = hashParams.get('error');
+    const hashErrorDescription = hashParams.get('error_description');
+    
+    if (hashError) {
+      setError(hashErrorDescription || hashError || 'Authentication failed');
+      return;
+    }
 
-        setStatus('Verifying your credentials...');
+    setStatus('Verifying your credentials...');
 
-        // Get session from Supabase - this handles the OAuth callback automatically
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Set up auth state listener - this fires when Supabase processes the hash
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[Callback] Auth event:', event);
         
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          throw sessionError;
-        }
-        
-        if (!session) {
-          // Wait a moment and try again - OAuth callback may still be processing
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
+        if (event === 'SIGNED_IN' && session) {
+          setStatus('Login successful! Redirecting...');
           
-          if (retryError || !retrySession) {
-            throw new Error('No session created. Please try logging in again.');
-          }
+          // Get return URL from sessionStorage or fallback
+          const storedReturnUrl = sessionStorage.getItem('auth_return_url');
+          sessionStorage.removeItem('auth_return_url');
+          const returnUrl = storedReturnUrl || getReturnUrl();
+          
+          // Small delay for UX, then redirect
+          setTimeout(() => {
+            window.location.href = returnUrl;
+          }, 1000);
         }
-
-        setStatus('Login successful! Redirecting...');
-        
-        // Get return URL from sessionStorage or fallback
-        const storedReturnUrl = sessionStorage.getItem('auth_return_url');
-        sessionStorage.removeItem('auth_return_url');
-        const returnUrl = storedReturnUrl || getReturnUrl();
-        
-        // Small delay for UX
-        setTimeout(() => {
-          window.location.href = returnUrl;
-        }, 1000);
-
-      } catch (err) {
-        console.error('Callback error:', err);
-        setError('An error occurred during login. Please try again.');
       }
-    };
+    );
 
-    handleCallback();
+    // Fallback timeout - if no auth event after 10 seconds, show error
+    const timeout = setTimeout(() => {
+      setError('Authentication timed out. Please try again.');
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [searchParams, navigate]);
 
   if (error) {
