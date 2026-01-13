@@ -20,20 +20,9 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       // TODO: Implement Microsoft OAuth with Supabase
-      // For now, show a toast indicating Supabase needs to be connected
       toast.info('Microsoft OAuth requires Supabase configuration', {
         description: 'Connect Supabase and configure Azure AD OAuth provider',
       });
-      
-      // When Supabase is connected, this will redirect to Microsoft OAuth:
-      // const { error } = await supabase.auth.signInWithOAuth({
-      //   provider: 'azure',
-      //   options: {
-      //     scopes: 'openid profile email',
-      //     redirectTo: `${window.location.origin}/auth/callback?return_url=${encodeURIComponent(returnUrl)}`,
-      //   }
-      // });
-      
     } catch (error) {
       console.error('Microsoft login error:', error);
       toast.error('Unable to connect. Please try again.');
@@ -61,10 +50,10 @@ const Login: React.FC = () => {
           <AuthCard>
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                Welcome Back
+                Login
               </h1>
-              <p className="text-muted-foreground">
-                Sign in to access the Bunting platform
+              <p className="text-muted-foreground text-sm">
+                Enter your buntingmagnetics.com email to sign in to your account
               </p>
             </div>
 
@@ -84,26 +73,36 @@ const Login: React.FC = () => {
               />
               
               <div className="auth-divider">
-                <span>or</span>
+                <span>OR</span>
               </div>
               
               <BadgeLoginButton 
                 onClick={handleBadgeLogin}
                 disabled={isLoading}
               />
+              
+              <p className="text-center text-xs text-muted-foreground">
+                For employees without company email access
+              </p>
+            </div>
+
+            {/* Additional Links */}
+            <div className="mt-8 space-y-4 text-center text-sm">
+              <div>
+                <span className="text-muted-foreground">Already have an email account? </span>
+                <a href="#" className="text-primary hover:underline">Sign in with email</a>
+              </div>
+              
+              <div>
+                <a href="#" className="text-primary hover:underline">Forgot your password?</a>
+              </div>
+              
+              <div className="pt-2 border-t border-border">
+                <span className="text-muted-foreground">Don't have an account? </span>
+                <a href="#" className="text-primary hover:underline">Sign up</a>
+              </div>
             </div>
           </AuthCard>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-muted-foreground">
-            Protected by Bunting IT Security • Need help?{' '}
-            <a 
-              href="mailto:it@buntingmagnetics.com" 
-              className="text-primary hover:underline"
-            >
-              Contact IT Support
-            </a>
-          </p>
         </div>
       </main>
     </div>

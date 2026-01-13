@@ -23,11 +23,11 @@ const MicrosoftLoginButton: React.FC<MicrosoftLoginButtonProps> = ({
 }) => {
   return (
     <Button
-      variant="microsoft"
+      variant="outline"
       size="xl"
       onClick={onClick}
       disabled={disabled || loading}
-      className="w-full relative"
+      className="w-full relative bg-[#2F2F2F] hover:bg-[#3a3a3a] border-[#3a3a3a] text-white"
     >
       {loading ? (
         <div className="absolute inset-0 flex items-center justify-center">

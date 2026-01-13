@@ -9,7 +9,7 @@ interface AuthCardProps {
 const AuthCard: React.FC<AuthCardProps> = ({ children, className }) => {
   return (
     <div className={cn(
-      "bg-card rounded-2xl shadow-auth-xl border border-border p-8 w-full max-w-md animate-slide-up",
+      "bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-8 shadow-xl w-full max-w-md animate-fade-in",
       className
     )}>
       {children}
