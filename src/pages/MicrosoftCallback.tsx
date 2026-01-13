@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import AuthCard from '@/components/AuthCard';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { getReturnUrl } from '@/lib/auth';
 
 const MicrosoftCallback: React.FC = () => {

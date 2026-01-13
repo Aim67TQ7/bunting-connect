@@ -2,30 +2,39 @@
  * Bunting Auth Hook - Reusable authentication for *.buntinggpt.com apps
  * 
  * USAGE:
- * 1. Copy this file to your app's hooks folder
- * 2. Create a Supabase client with the same config (see below)
- * 3. Use the hook in your app's root or protected routes
+ * 1. Copy this file AND src/lib/supabase.ts to your app
+ * 2. Install js-cookie: npm install js-cookie @types/js-cookie
+ * 3. Copy the isDevelopment() function from src/lib/auth.ts
+ * 4. Use the hook in your app's root or protected routes
  * 
- * REQUIRED SUPABASE CLIENT CONFIG:
+ * REQUIRED FILES TO COPY:
+ * - src/lib/supabase.ts (cookie-based Supabase client)
+ * - src/hooks/useBuntingAuth.ts (this file)
+ * 
+ * The Supabase client MUST use cookie storage scoped to .buntinggpt.com:
  * ```typescript
- * import { createClient } from '@supabase/supabase-js';
+ * import Cookies from 'js-cookie';
  * 
- * const SUPABASE_URL = "https://qzwxisdfwswsrbzvpzlo.supabase.co";
- * const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+ * const cookieStorage = {
+ *   getItem: (key) => Cookies.get(key) || null,
+ *   setItem: (key, value) => Cookies.set(key, value, {
+ *     domain: '.buntinggpt.com',
+ *     secure: true,
+ *     sameSite: 'lax',
+ *     expires: 7,
+ *   }),
+ *   removeItem: (key) => Cookies.remove(key, { domain: '.buntinggpt.com' }),
+ * };
  * 
- * export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
- *   auth: {
- *     storage: localStorage,
- *     persistSession: true,
- *     autoRefreshToken: true,
- *   }
+ * export const supabase = createClient(URL, KEY, {
+ *   auth: { storage: cookieStorage, persistSession: true, autoRefreshToken: true }
  * });
  * ```
  */
 
 import { useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // Configuration - Update these for your environment
 const AUTH_HUB_URL = 'https://login.buntinggpt.com';
