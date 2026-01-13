@@ -26,6 +26,37 @@ const MicrosoftCallback: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('Processing your login...');
 
+  // At the VERY TOP of the component, before anything else
+  const [debugStop] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('debug') === 'stop';
+  });
+
+  if (debugStop) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'monospace' }}>
+        <h1>DEBUG MODE - Redirects Disabled</h1>
+        <button onClick={async () => {
+          const { data } = await supabase.auth.getSession();
+          alert(`Session: ${data.session ? 'YES - ' + data.session.user.email : 'NO'}`);
+        }}>Check Session</button>
+        <br/><br/>
+        <button onClick={() => {
+          alert(`Cookies: ${document.cookie}`);
+        }}>Check Cookies</button>
+        <br/><br/>
+        <button onClick={() => {
+          const params = new URLSearchParams(window.location.search);
+          alert(`returnUrl param: ${params.get('returnUrl')}`);
+        }}>Check returnUrl</button>
+        <br/><br/>
+        <button onClick={() => {
+          window.location.href = 'https://self.buntinggpt.com?debug=stop';
+        }}>Go to self.buntinggpt.com (with debug)</button>
+      </div>
+    );
+  }
+
   useEffect(() => {
     // Check for error in query params first
     const errorParam = searchParams.get('error');
