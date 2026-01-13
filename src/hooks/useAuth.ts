@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -14,7 +16,17 @@ interface AuthState {
   error: string | null;
 }
 
-// This hook will be connected to Supabase once configured
+const mapSupabaseUser = (supabaseUser: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email ?? null,
+    name: supabaseUser.user_metadata?.full_name ?? supabaseUser.user_metadata?.name ?? null,
+    role: supabaseUser.user_metadata?.role,
+  };
+};
+
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -27,14 +39,14 @@ export const useAuth = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      // TODO: Implement Supabase session check
-      // const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      // For now, simulate no session
+      if (error) throw error;
+      
       setAuthState({
-        isAuthenticated: false,
+        isAuthenticated: !!session,
         isLoading: false,
-        user: null,
+        user: mapSupabaseUser(session?.user ?? null),
         error: null,
       });
     } catch (error) {
@@ -52,8 +64,8 @@ export const useAuth = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
-      // TODO: Implement Supabase sign out
-      // await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
       setAuthState({
         isAuthenticated: false,
@@ -72,7 +84,24 @@ export const useAuth = () => {
   }, []);
 
   useEffect(() => {
+    // Set up auth state listener BEFORE checking session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setAuthState({
+          isAuthenticated: !!session,
+          isLoading: false,
+          user: mapSupabaseUser(session?.user ?? null),
+          error: null,
+        });
+      }
+    );
+
+    // Then check initial session
     checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [checkSession]);
 
   return {
