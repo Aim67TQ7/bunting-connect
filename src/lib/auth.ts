@@ -34,3 +34,4 @@ export const getReturnUrl = (): string => {
   // Default: stay on login hub - don't redirect to main domain
   return '/';
 };
+// Deploy trigger Wed, Jan 14, 2026  6:55:04 AM
