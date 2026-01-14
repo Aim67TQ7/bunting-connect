@@ -22,8 +22,8 @@ const Login: React.FC = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const params = new URLSearchParams(window.location.search);
-        const returnUrl = params.get('returnUrl') || 'https://buntinggpt.com';
+        // Use getReturnUrl which handles both return_url and returnUrl params
+        const returnUrl = getReturnUrl();
         console.log('[Login] Already authenticated, redirecting to:', returnUrl);
         window.location.href = returnUrl;
         return;
@@ -45,8 +45,11 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       // Store returnUrl in cookie ONLY (survives OAuth redirect)
-      const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'https://buntinggpt.com';
-      const cookieString = `auth_return_url=${encodeURIComponent(returnUrl)}; path=/; domain=.buntinggpt.com; max-age=300; SameSite=Lax; Secure`;
+      // Use getReturnUrl which handles both return_url and returnUrl params
+      const returnUrl = getReturnUrl();
+      const domain = isDevelopment() ? '' : '; domain=.buntinggpt.com';
+      const secure = isDevelopment() ? '' : '; Secure';
+      const cookieString = `auth_return_url=${encodeURIComponent(returnUrl)}; path=/${domain}; max-age=300; SameSite=Lax${secure}`;
       document.cookie = cookieString;
       console.log('[Login] Set auth_return_url cookie:', returnUrl);
       console.log('[Login] Cookie string:', cookieString);

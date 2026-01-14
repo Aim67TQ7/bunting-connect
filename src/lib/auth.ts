@@ -31,5 +31,6 @@ export const getReturnUrl = (): string => {
     return returnUrl;
   }
   
-  return isDevelopment() ? '/' : 'https://buntinggpt.com';
+  // Default: stay on login hub - don't redirect to main domain
+  return '/';
 };

@@ -55,7 +55,8 @@ const MicrosoftCallback: React.FC = () => {
   // Helper: Get return URL from cookie only
   const getReturnUrlFromCookie = (): string => {
     const match = document.cookie.match(/auth_return_url=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : 'https://buntinggpt.com';
+    // Default: stay on login hub - don't redirect to main domain
+    return match ? decodeURIComponent(match[1]) : '/';
   };
 
   // Helper: Clear return URL cookie
