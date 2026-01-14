@@ -6,7 +6,7 @@ import DevBanner from '@/components/DevBanner';
 import AuthCard from '@/components/AuthCard';
 import MicrosoftLoginButton from '@/components/MicrosoftLoginButton';
 import BadgeLoginButton from '@/components/BadgeLoginButton';
-import { isDevelopment, getReturnUrl } from '@/lib/auth';
+import { isDevelopment, getReturnUrl, clearAllAuthCookies } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -22,8 +22,9 @@ const Login: React.FC = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Use getReturnUrl which handles both return_url and returnUrl params
-        const returnUrl = getReturnUrl();
+        // Read returnUrl directly from URL params
+        const params = new URLSearchParams(window.location.search);
+        const returnUrl = params.get('returnUrl') || params.get('return_url') || 'https://buntinggpt.com';
         console.log('[Login] Already authenticated, redirecting to:', returnUrl);
         window.location.href = returnUrl;
         return;
@@ -44,6 +45,9 @@ const Login: React.FC = () => {
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
     try {
+      // Nuclear option: clear all existing auth state before fresh login
+      clearAllAuthCookies();
+      
       // Store returnUrl in cookie ONLY (survives OAuth redirect)
       // Use getReturnUrl which handles both return_url and returnUrl params
       const returnUrl = getReturnUrl();

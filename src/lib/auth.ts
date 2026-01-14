@@ -5,6 +5,35 @@
  * No duplicate storage logic. No rate limiting.
  */
 
+/**
+ * Clear all cookies for buntinggpt.com domain
+ * Call this at the start of any new login flow
+ */
+export const clearAllAuthCookies = (): void => {
+  const cookies = document.cookie.split(';');
+  const domains = ['.buntinggpt.com', 'buntinggpt.com'];
+  const paths = ['/', ''];
+  
+  cookies.forEach(cookie => {
+    const name = cookie.split('=')[0].trim();
+    if (!name) return;
+    
+    // Try all combinations of domain and path
+    domains.forEach(domain => {
+      paths.forEach(path => {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${domain}; path=${path}`;
+      });
+    });
+    
+    // Also clear without domain attribute (current host only)
+    paths.forEach(path => {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}`;
+    });
+  });
+  
+  console.log('[clearAllAuthCookies] Cleared all auth cookies');
+};
+
 export const isDevelopment = (): boolean => {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
