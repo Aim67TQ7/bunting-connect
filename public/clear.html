@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Clearing session...</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #1a1a1a;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <p>Clearing session data...</p>
+  <script>
+    const cookies = document.cookie.split(';');
+    const domains = ['.buntinggpt.com', 'buntinggpt.com'];
+    
+    cookies.forEach(cookie => {
+      const name = cookie.split('=')[0].trim();
+      if (!name) return;
+      domains.forEach(domain => {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${domain}; path=/`;
+      });
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+    
+    setTimeout(() => {
+      window.location.href = 'https://login.buntinggpt.com';
+    }, 500);
+  </script>
+</body>
+</html>
