@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 import BuntingLogo from '@/components/BuntingLogo';
 import AuthCard from '@/components/AuthCard';
+import { clearAllAuthCookies } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 const Logout: React.FC = () => {
@@ -14,12 +15,8 @@ const Logout: React.FC = () => {
       // Sign out from Supabase
       await supabase.auth.signOut();
       
-      // Nuclear clear: All cookies on both current path and .buntinggpt.com domain
-      document.cookie.split(';').forEach(c => {
-        const name = c.trim().split('=')[0];
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.buntinggpt.com`;
-      });
+      // Clear all auth cookies using the utility
+      clearAllAuthCookies();
       
       setStatus('complete');
       setTimeout(() => {
